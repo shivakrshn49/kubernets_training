@@ -1,0 +1,265 @@
+Slack Channel
+-------------
+Amazon Linux instance
+
+Username : ec2-user
+
+# docker install
+sudo yum install docker
+# start the docker service
+sudo service docker start
+sudo chkconfig docker on
+# add the user to docker group - https://docs.docker.com/engine/install/linux-postinstall/
+sudo groupadd docker
+sudo usermod -aG docker $USER
+    sudo usermod -a -G docker ec2-user
+
+docker run --rm --name dockertraining -d -p 80:80 apache
+
+docker ps -a
+docker rmi hello-world
+docker rmi --force
+docker pull ubuntu
+docker pull ubuntu:18.04
+
+docker run --rm --name dockertraining -d -p 80:80 apache
+docker pause dockertraining
+docker unpause dockertraining
+docker stop dockertraining
+docker run -d -p 80:8080 jenkins
+docker logs < jenkins container id>
+docker volume create jenkinshome
+sudo cat /var/lib/docker/volumes/jenkinshome/_data/secrets/initialAdminPassword
+docker volume ls
+docker run -d -p 80:8080 -v jenkinshome:/var/jenkins_home jenkins/jenkins
+
+docker top <container_id>
+docker stats <container_id>
+docker inspect <container_id>
+docker volume inspect jenkinshome
+docker inspect apache
+
+docker exec 0f6d95f88de2 cat /var/jenkins_home/config.xml
+docker exec 0f6d95f88de2 ps -aef
+docker exec 0f6d95f88de2 uptime
+
+docker run -it ubuntu:18.04 bash
+apt-get update
+apt-get install apache2
+echo "testing manual image creation" > /var/www/html/index.html
+apt-get install vim
+
+vi run.sh
+. /etc/apache2/envvars
+mkdir -p /var/run/apache2
+mkdir -p /var/lock/apache2
+/usr/sbin/apache2 -D FOREGROUND
+chmod 755 run.sh
+chmod u+x run.sh
+
+Commit an image
+------------
+docker commit bd0dd9881809 apachemanual
+
+docker build -t apachemanualfinal .
+docker stop <jenkins continer id>
+docker run -d --rm -p 80:80 apachemanualfinal
+
+Tag an image
+---------------
+docker tag <image_name_or_id> <docker_hub_id>/<new_image_name>
+
+Login docker
+------------------
+docker login
+
+push the docker image
+--------------------
+docker push <image_name>
+
+docker run -d -p 5000:5000 --restart always --name registry registry:2
+docker tag apache localhost:5000/apache
+curl http://localhost:5000/v2/_catalog
+docker push localhost:5000/apache
+
+CMD
+----
+vi cmd/Dockerfile
+    FROM busybox
+    CMD ["ping","-c","4","www.google.com"]
+docker build -t cmd cmd/
+docker run cmd
+
+ENTRY
+-----
+vi entry/Dockerfile
+    FROM busybox
+    CMD ENTRYPOINT ["ping","-c","4"]
+docker build -t entry entry/
+docker run entry
+
+ENTRY and CMD
+--------------
+vi entry/Dockerfile
+    FROM busybox
+    ENTRYPOINT ["ping","-c","4"]
+    CMD ["www.google.com"]
+
+docker build -t entrycmd entry/
+docker run entrycmd
+docker run entrycmd www.microsoft.com
+
+Get the env variables available in container
+-------------------------------
+docker run <image_id_or_name> env
+
+Override en variables
+------------------------
+docker build -t env env/
+docker run env env
+
+docker run -e var3=spglobal env env
+docker run -e var3=spglobal -e var2=test env env
+
+
+docker run -d -p 80:80 apache
+docker stats 2f6186fa1180
+
+Memory allocation to docker container
+------------------------
+docker run --memory="256m" -d -p 80:80 apache
+docker run --memory="256m" --cpus=0.5 -d -p 80:80 apache
+docker inspect c86 | grep NanoCpus
+
+Docker networks
+-------------------
+Run a container with particular host
+    docker run -d --network host apache
+
+Create a docker network
+    docker network create --driver bridge netowrkA
+    docker network create --driver bridge netowrkB
+docker network ls
+docker network inspect netowrkA
+
+Run a container on netowrkA with busybox as image - web
+    docker run -it --network netowrkA --name web busybox sh
+Run a container on netowrkB with busybox as image - db
+    docker run -it --network netowrkB --name db busybox sh
+Run a container on netowrkA with busybox as image - app
+    docker run -it --network netowrkA --name app busybox sh
+Attach a container to avaialble netowrk
+    docker network connect netowrkB app
+
+Pinging the containers from each other
+in WEB
+    ping -c 4 172.18.0.3
+    ping -c 4 172.19.0.2
+IN DB
+    ping -c 4 172.19.0.3
+    ping -c 4 172.18.0.2
+in APP
+    ping -c 4 172.18.0.2
+    ping -c 4 172.19.0.2
+
+Create a container in certain network range
+    docker network create --subnet=172.22.0.0/16 testnetwork
+Assign an ip address to a container
+    docker run -it --network testnetwork --ip 172.22.0.10 busybox sh
+
+Install docker compose
+--------------------------
+sudo curl -L "https://github.com/docker/compose/releases/download/1.26.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+docker-compose --version
+
+
+EKS - Elastic Kubernets service
+AKS - AZure Kubernets service
+GKE - Google Kubernets engine
+
+ELK - Elastic Logstash Kibana
+EFL - Elastic Fluentd Kibana
+
+
+yum update -y
+Enable security feature in centos/redhat
+    sed -i s/^SELINUX=.*$/SELINUX=disabled/ /etc/selinux/config
+set host name and restart
+    hostnamectl set-hostname master.spglobaltraining.com
+    init 6
+Enable Kubernets repository in package manager
+    vi /etc/yum.repos.d/kubernetes.repo
+        [kubernetes]
+        name=Kubernetes
+        baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+        enabled=1
+        gpgcheck=1
+        repo_gpgcheck=1
+        gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
+            https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+        yum install kubeadm docker
+        systemctl restart docker && systemctl enable docker
+        systemctl restart kubelet && systemctl enable kubelet
+        kubeadm init
+        Check the list of child nodes
+            kubectl get nodes
+        Make all the nodes as active and running
+            kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+        Get all the pos from all nodes
+            kubectl get pods --all-namespaces
+
+Connect to other machine
+    vi key.pem
+    chmod 600 key.pem
+    ssh -i key.pem ubuntu@<your master server ip>
+
+download kubectl
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/windows/amd64/kubectl.exe
+    https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/windows/amd64/kubectl.exe
+
+    
+    cd C:\Users\s_bavandla\
+    mkdir .kube
+    cd .kube
+    replace the config file with the output of kubeconfig from node server
+        notepad config
+
+    kubectl get nodes
+    kubectl get pods --all-namespaces
+
+    create two Users
+        notepad user.yaml
+            apiVersion: v1
+            kind: ServiceAccount
+            metadata:
+            name: admin-user
+            namespace: kube-system
+
+        notepad role.yaml
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: ClusterRoleBinding
+            metadata:
+            name: admin-user
+            roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: cluster-admin
+            subjects:
+            - kind: ServiceAccount
+            name: admin-user
+            namespace: kube-system
+
+    Apply the above user with role to kubectl
+        kubectl apply -f user.yaml
+        kubectl apply -f role.yaml
+
+    A token will be created for each and every user
+        List the tokens
+            kubectl -n kube-system get secret
+        
+        Get the token of a specific user
+            kubectl -n kube-system describe secret admin-user-token-7fngf
+
+        Run the kubectl server - Create a proxy
+            kubectl proxy            
