@@ -1,5 +1,4 @@
-Slack Channel
--------------
+
 Amazon Linux instance
 
 Username : ec2-user
@@ -118,8 +117,8 @@ Override en variables
 docker build -t env env/
 docker run env env
 
-docker run -e var3=spglobal env env
-docker run -e var3=spglobal -e var2=test env env
+docker run -e var3=<company_name> env env
+docker run -e var3=<company_name> -e var2=test env env
 
 
 docker run -d -p 80:80 apache
@@ -186,7 +185,7 @@ yum update -y
 Enable security feature in centos/redhat
     sed -i s/^SELINUX=.*$/SELINUX=disabled/ /etc/selinux/config
 set host name and restart
-    hostnamectl set-hostname master.spglobaltraining.com
+    hostnamectl set-hostname master.<company_name>training.com
     init 6
 Enable Kubernets repository in package manager
     vi /etc/yum.repos.d/kubernetes.repo
@@ -262,4 +261,164 @@ download kubectl
             kubectl -n kube-system describe secret admin-user-token-7fngf
 
         Run the kubectl server - Create a proxy
-            kubectl proxy            
+            kubectl proxy
+
+Get the pods of a specific namespace
+    kubectl -n kube-system get pods
+
+Get the pods of a default namespace
+    kubectl get pods
+
+Get all the nodes connected to this cluster
+    kubectl -n kube-system get nodes
+    kubectl get nodes
+
+Create the first deployment
+    notepad first_deployment.yml
+                apiVersion: apps/v1
+                kind: Deployment
+                metadata:
+                    name: nginx-deployment
+                    labels:
+                        app: nginx
+                spec:
+                    replicas: 4
+                    selector:
+                        matchLabels:
+                            app: nginx
+                    template:
+                        metadata:
+                            labels:
+                                app: nginx
+                        spec:
+                            containers:
+                            - name: nginxpod
+                                image: nginx
+                                ports:
+                                - containerPort: 80
+                ---
+                apiVersion: v1
+                kind: Service
+                metadata:
+                    name: webservice
+                    labels:
+                        app: nginx
+                spec:
+                    ports:
+                    - port: 80
+                        protocol: TCP
+                    selector:
+                        app: nginx
+                    type: LoadBalancer
+
+    Apply the deployment
+        kubectl apply -f first_deployment.yml
+
+List the deployments
+    kubectl get deployments
+    
+    Detail information about deployment
+        kubectl describe deployment/nginx-deployment
+
+List the replica sets avaialble
+    kubectl get rs
+    
+    Describe the replica set
+        kubectl describe rs nginx-deployment-8574d46659
+
+List the services
+    kubectl get svc
+
+Edit the deployment
+    kubectl edit deploy/nginx-deployment
+
+    Display the deployment file content in yml format
+        kubectl get deploy/nginx-deployment -o yaml
+
+Change the image name in the deployment
+    kubectl set image deploy/nginx-deployment nginxpod=nginx:1.17.9
+
+    Check the logs of above changes
+        kubectl rollout status deploy/nginx-deployment
+
+Scale a deployment from command line
+    kubectl scale deploy/nginx-deployment --replicas=10
+
+    Check the logs of above changes
+        kubectl rollout status deploy/nginx-deployment
+
+Rollback the deployment changes
+    kubectl rollout undo deploy/nginx-deployment
+
+List rollout history
+    kubectl rollout history deployment/nginx-deployment
+
+Update the change cause for the deployment
+    kubectl --record deployment/nginx-deployment set image nginxpod=1.18
+
+Get details about specific revision
+    kubectl rollout history deployment/nginx-deployment --revision=4
+
+Rollback to a particular version
+    kubectl rollout undo deploy/nginx-deployment --to-revision=7
+
+Pause and resume a deployment
+    kubectl rollout pause deploy/nginx-deployment
+    kubectl rollout resume deploy/nginx-deployment
+
+Autoscale deployment
+    kubectl autoscale deploy/nginx-deployment --min=6 --max=15 --cpu-percent=80
+
+    Get horizontal pod autoscale info
+        kubectl get hpa
+
+    Edit Autoscale
+        kubectl edit hpa/nginx-deployment
+
+Get the pods of a specific namespace
+    kubectl get pods -n kube-system
+    
+
+Get the logs of specific pods
+    kubectl logs kubernetes-dashboard-59756dbcc8-qnmk2 -n kube-system
+
+    Follow the log
+        kubectl logs -f kubernetes-dashboard-59756dbcc8-qnmk2 -n kube-system
+
+Execute commands inside the running pod
+    kubectl exec <pod_name> -- <command>
+    ex: kubectl exec <pod_name> -- ls -altr
+    kubectl exec nginx-deployment-8574d46659-4pdfc -- ls -altr
+
+Login to pod
+    kubectl exec -it nginx-deployment-8574d46659-4pdfc -- sh
+
+Delete the deployment and service
+    kubectl delete -f deployments/first_deployment.yml
+
+Flush the dns resolver cache locally
+    ipconfig /flushdns
+
+Get the cron jobs plan
+    kubectl get cronjobs
+
+    Get the individual jobs that are triggered with the above time settings
+        kubectl get jobs
+
+        Get the pods running for the individual job
+            kubectl get pods --selector=job-name=<job name>
+
+        Get the logs of a specific job
+            kubectl logs jobs/testcronjob-1592542920
+
+Delete a deployment
+    kubectl.exe delete -f deployments/cron.yml
+
+Login to redis container and go to redis client
+    kubectl exec -it redis -- redis-cli
+    CONFIG GET maxmemory
+    CONFIG GET maxmemory-policy
+
+Run a command on paritcular container inside a pod which has two containers running
+    kubectl exec multicontainer -c datagenerator -- cat /html/index.html
+    kubectl exec multicontainer -c datadisplayer -- cat /usr/share/nginx/html/index.html

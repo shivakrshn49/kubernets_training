@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: exampleconfigmap
+data:
+  database: mysql
+  databaseurl: mysql://localhost:3306
+  keys: |
+    name.training=kubernetes
+    program.training=test
+    trainer.training=sathish
