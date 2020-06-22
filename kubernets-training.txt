@@ -422,3 +422,37 @@ Login to redis container and go to redis client
 Run a command on paritcular container inside a pod which has two containers running
     kubectl exec multicontainer -c datagenerator -- cat /html/index.html
     kubectl exec multicontainer -c datadisplayer -- cat /usr/share/nginx/html/index.html
+
+Create a namespace
+    kubectl create namespace monitoring
+
+Filter in promotheus
+    container_memory_usage_bytes{pod_name="calico-node-p5s98"}
+    rate(container_memory_usage_bytes{namespace="monitoring"}[10m])
+    rate(container_memory_usage_bytes{namespace="monitoring"}[1m])
+
+Helm usage - (Helm is a package manager for Kubernets)
+    helm create firsttemplate
+    helm lint ./firsttemplate
+    helm template ./firsttemplate
+    helm install helmapp --dry-run ./firsttemplate
+    helm install helmapp ./firsttemplate
+
+    list the history of the deployment
+        helm history helmapp
+    
+    Rollback to the version
+        helm rollback helmapp 1
+    
+    Test the deployed application
+        helm test helmapp
+    
+    List the deployed applications
+        helm list
+
+    Delete a particular deployment
+        helm delete helmapp
+
+download Istios
+    curl -L https://git.io/getLatestIstio | ISTIO_VERSION=1.1.1 sh -
+    export PATH="$PATH:/home/ubuntu/istio-1.1.1/bin"
